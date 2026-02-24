@@ -60,7 +60,6 @@ export const addSignature = actionClient
     .action(async ({ parsedInput: { multisig, signature, tx } }) => {
         const tx_hash = hash("sha256", tx)
         const env = getCloudflareContext().env as Env
-        console.log(tx_hash, tx)
 
         await env.THRESHOLD.put(`transaction:${tx_hash}`, tx)
 
@@ -72,7 +71,6 @@ export const addSignature = actionClient
         const pubkey_results = [...(await env.THRESHOLD.get(signers_result.signers.map(a => `pubkey:${a}`))).values()] as string[]
         const pubkeys = pubkey_results.map(s => new Ed25519PublicKey(s))
 
-        console.log(pubkeys.map(k => k.toSuiAddress()))
         
         const verified = await Promise.all(
             pubkeys.map(pubkey => verifyTransactionSignature(
@@ -86,7 +84,6 @@ export const addSignature = actionClient
                 .catch(() => ({ pubkey, verifies: false }))
             )
         )
-        console.log(verified)
 
         const pubkey = verified.find(({ verifies }) => verifies)?.pubkey
 
@@ -113,7 +110,6 @@ export const combineSignatures = actionClient
         
         const { keys } = await env.THRESHOLD.list({ prefix: `multisig_sig:${multisig}:${tx_hash}` })
 
-        console.log(keys)
 
         const sigs_result = await env.THRESHOLD.get(keys.map(k => k.name), { type: "json" }) as Map<string, Signature | null | undefined>
         const found_sigs = Array.from(sigs_result.values()).filter(v => v !== null && v !== undefined)
@@ -130,8 +126,6 @@ export const combineSignatures = actionClient
                 .toSorted(({ publicKey: pk1 }, { publicKey: pk2}) => pk1.toSuiAddress().localeCompare(pk2.toSuiAddress()))
         })
 
-        console.log(multisig_pubkey.toSuiAddress())
-        
         const combined = multisig_pubkey.combinePartialSignatures(found_sigs.map(s => s.signature))
         return { success: true, combined }
     })
@@ -140,7 +134,6 @@ export const getTransaction = actionClient
     .inputSchema(getTxSignatureSchema)
     .action(async ({ parsedInput: { tx_hash, multisig } }) => {
         const env = getCloudflareContext().env as Env
-        console.log(tx_hash, multisig)
 
         const prefix = `multisig_sig:${multisig}:${tx_hash}`
         const [trx_result, sigs_result] = await Promise.all([
@@ -196,7 +189,6 @@ export const getCoinData = actionClient
         if (!isValidSuiAddress(address)) {
             return
         }
-        console.log("getting data for", address)
         const env = getCloudflareContext().env as Env
         const response = await fetch(
             `https://api.blockvision.org/v2/sui/account/coins?account=${address}`,

@@ -1,3 +1,5 @@
+"use client"
+
 import { create } from "zustand"
 import { Multisig } from "./schemas"
 import { getCoinData, getTransaction } from "./actions"

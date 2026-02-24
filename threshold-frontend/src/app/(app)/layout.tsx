@@ -83,10 +83,10 @@ export default function AppLayout({
     return <>
         <SuggestSignature />
         <div className="flex flex-col min-h-screen">
-            <div className="flex py-4 items-center gap-2 px-4 lg:px-[30%] border-b-2">
+            <div className="flex py-2 sm:py-4 items-center gap-2 px-2 sm:px-4 lg:px-[30%] border-b-2">
                 <Link href="/" className="flex gap-2 items-center">
-                    <img src="/alcatraz.svg" className="w-12 h-12"/>
-                    <h1 className="font-bold text-xl">Alcatraz Wallet</h1>
+                    <img src="/alcatraz.svg" className="w-10 h-10 sm:w-12 sm:h-12"/>
+                    <h1 className="font-bold sm:text-xl">Alcatraz Wallet</h1>
                 </Link>
                 <div className="ml-auto flex items-center gap-2">
                     {connected_multisig && <><Network /> <p className="mr-4">Connected To Dapp</p></>}
@@ -94,9 +94,9 @@ export default function AppLayout({
                 </div>
             </div>
             {children}
-            <div className="flex py-4 items-center gap-2 px-4 lg:px-[30%] border-t-2">
+            <div className="flex py-2 sm:py-4 items-center gap-2 px-2 sm:px-4 lg:px-[30%] border-t-2">
                 <a href="https://github.com/mattjurenka/alcatraz-wallet" className="font-medium underline">GitHub</a>
-                <p className="ml-auto font-medium">Made with Love by Matthew Jurenka</p>
+                <p className="ml-auto text-sm sm:text-base font-medium">Made with Love by Matthew Jurenka</p>
             </div>
         </div>
     </>

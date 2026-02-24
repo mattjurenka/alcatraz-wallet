@@ -26,7 +26,7 @@ export default function CreateMultisig() {
 
     return <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-            <Button size="lg">Create Multisig</Button>
+            <Button size="lg" className="grow">Create Multisig</Button>
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
@@ -71,7 +71,7 @@ export default function CreateMultisig() {
                         register_multisig(created_multisig)
                         setIsOpen(false)
                     }}
-                    className="flex flex-col gap-4"
+                    className="flex flex-col sm:gap-4 gap-2"
                 >
                     <div className="flex gap-2">
                         <button type="button" className="cursor-pointer" onClick={() => {

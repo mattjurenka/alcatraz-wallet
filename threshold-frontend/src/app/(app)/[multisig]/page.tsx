@@ -26,18 +26,18 @@ export default function Multisig() {
     const filtered = data?.coins?.filter(coin => !coin.scam && coin.verified)
         ?.toSorted((a, b) => parseFloat(b.usdValue) - parseFloat(a.usdValue) )
 
-    return <div className="px-4 lg:px-[30%] h-full flex grow flex-col py-16 gap-4">
-        <div className="flex gap-4 items-center">
+    return <div className="px-2 sm:px-4 lg:px-[30%] h-full flex grow flex-col py-2 sm:py-16 gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-baseline sm:items-center">
             <div>
                 <p>Wallet</p>
-                <p className="text-3xl font-semibold">
+                <p className="text-xl sm:text-3xl font-semibold">
                     {shortenAddress(multisig)}
                     <button className="cursor-pointer ml-4" onClick={() => navigator.clipboard.writeText(multisig)}>
                         <Copy />
                     </button>
                 </p>
             </div>
-            <div className="ml-auto">
+            <div className="sm:ml-auto">
                 {connected_multisig ?
                     <Button variant={"outline"}>Disconnect</Button> :
                     <ConnectWalletConnect multisig={multisig}/>
@@ -65,7 +65,7 @@ export default function Multisig() {
                 <p className="text-center my-4">Loading...</p> :
                 <></>}
         <h3 className="text-lg font-semibold">Transactions</h3>
-        <form className="flex gap-4" onSubmit={e => {
+        <form className="flex flex-col sm:flex-row gap-4" onSubmit={e => {
             e.preventDefault()
             const form_data = new FormData(e.target)
 

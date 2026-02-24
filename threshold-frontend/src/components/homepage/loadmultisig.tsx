@@ -17,7 +17,7 @@ export default function LoadMultisig() {
 
     return <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-            <Button size="lg" variant={"outline"}>Load Multisig</Button>
+            <Button size="lg" variant={"outline"} className="grow">Load Multisig</Button>
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
