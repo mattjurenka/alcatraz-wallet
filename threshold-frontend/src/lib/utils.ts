@@ -5,4 +5,4 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const shortenAddress = (addr: string) => `${addr.substring(0, 6)}...${addr.substring(62)}`
+export const shortenAddress = (addr: string) => `${addr.substring(0, 10)}...${addr.substring(58)}`

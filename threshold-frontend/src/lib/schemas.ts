@@ -1,8 +1,7 @@
 import { z } from "zod";
 
 export const registerPubkeySchema = z.object({
-  signature: z.string(),
-  address: z.string()
+  pubkey: z.string(),
 });
 
 export const registerMultisigSchema = z.object({
@@ -22,12 +21,23 @@ export const combineSignaturesSchema = z.object({
 })
 
 export const getTxSignatureSchema = z.object({
+  multisig: z.string(),
   tx_hash: z.string()
+})
+
+export const getMultisigSchema = z.object({
+  address: z.string()
+})
+
+export const getCoinDataSchema = z.object({
+  address: z.string()
 })
 
 export interface Multisig {
   threshold: number,
-  addresses: string[]
+  signers: string[],
+  address: string
+  pubkey: string
 }
 
 export interface Signature {

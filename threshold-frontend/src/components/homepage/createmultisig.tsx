@@ -46,7 +46,7 @@ export default function CreateMultisig() {
                             return
                         }
 
-                        const created_address = await toast.promise(
+                        const created_multisig = await toast.promise(
                             executeRegister({
                                 addresses: filtered,
                                 threshold: parseInt(data.get("threshold")!.toString())
@@ -56,7 +56,7 @@ export default function CreateMultisig() {
                                     throw new Error("Unknown Server Error")
                                 } else {
                                     if (data.success) {
-                                        return data.address!
+                                        return data.multisig!
                                     } else {
                                         throw new Error(data.error)
                                     }
@@ -64,11 +64,11 @@ export default function CreateMultisig() {
                             }),
                             {
                                 loading: "Registering Multisig...",
-                                success: a => `Registered Address ${shortenAddress(a)}`,
+                                success: a => `Registered Address ${shortenAddress(a.address)}`,
                                 error: e => `Failed to Register: ${e}`
                             },
                         )
-                        register_multisig(created_address)
+                        register_multisig(created_multisig)
                         setIsOpen(false)
                     }}
                     className="flex flex-col gap-4"

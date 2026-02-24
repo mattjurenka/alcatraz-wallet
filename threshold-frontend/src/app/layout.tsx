@@ -33,10 +33,13 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	const load_localstorage = useStore(s => s.load_localstorage)
+	const init_walletkit = useStore(s => s.init_walletkit)
 
 	const [dAppKit, setDAppKit] = useState<DAppKit<string[], SuiGrpcClient> | null>(null)
 	useEffect(() => {
 		load_localstorage()
+
+		init_walletkit()
 
 		;(async () => {
 			const { createDAppKit } = await import("@mysten/dapp-kit-react")

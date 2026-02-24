@@ -30,7 +30,7 @@
 			// see https://opennext.js.org/cloudflare/caching
 			"binding": "WORKER_SELF_REFERENCE",
 			"service": "threshold-frontend"
-		}
+		},
 	],
 	"kv_namespaces": [
 		{

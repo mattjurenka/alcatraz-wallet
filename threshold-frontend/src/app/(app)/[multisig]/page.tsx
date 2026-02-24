@@ -1,42 +1,83 @@
 "use client"
 
-import { addSignature } from "@/lib/actions";
-import { sui_client } from "@/lib/clients";
-import { ConnectButton, useDAppKit } from "@mysten/dapp-kit-react";
-import { parseTransactionBcs } from "@mysten/sui/client";
-import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
-import { Transaction } from "@mysten/sui/transactions";
-import { fromBase64 } from "@mysten/sui/utils";
-import { verifyTransactionSignature } from "@mysten/sui/verify";
-import { useAction } from "next-safe-action/hooks";
-import { useParams } from "next/navigation";
+import ConnectWalletConnect from "@/components/dashboard/connectwalletconnect";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { coinDataFetcher, useStore } from "@/lib/data";
+import { shortenAddress } from "@/lib/utils";
+import { Copy } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import useSWR from "swr"
+
+const usdFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+});
 
 export default function Multisig() {
     const { multisig } = useParams<{ multisig: string }>()
-    const dAppKit = useDAppKit();
+    const [showAll, setShowall] = useState(false)
+    const connected_multisig = useStore(s => s.connected_multisig)
+    const multisigs = useStore(s => s.multisigs)
+    const router = useRouter()
+    
+    const { data, isLoading } = useSWR(multisig, coinDataFetcher)
+    const filtered = data?.coins?.filter(coin => !coin.scam && coin.verified)
+        ?.toSorted((a, b) => parseFloat(b.usdValue) - parseFloat(a.usdValue) )
 
-	const { execute: executeAdd, result: addResult } = useAction(addSignature)
-    console.log(addResult)
+    return <div className="px-4 lg:px-[30%] h-full flex grow flex-col py-16 gap-4">
+        <div className="flex gap-4 items-center">
+            <div>
+                <p>Wallet</p>
+                <p className="text-3xl font-semibold">
+                    {shortenAddress(multisig)}
+                    <button className="cursor-pointer ml-4" onClick={() => navigator.clipboard.writeText(multisig)}>
+                        <Copy />
+                    </button>
+                </p>
+            </div>
+            <div className="ml-auto">
+                {connected_multisig ?
+                    <Button variant={"outline"}>Disconnect</Button> :
+                    <ConnectWalletConnect multisig={multisig}/>
+                }
+            </div>
+        </div>
+        <h3 className="text-lg font-semibold">Coins</h3>
+        {filtered ?
+            <div className="flex flex-col gap-2">
+                {filtered
+                    .slice(0, showAll ? undefined : 10)
+                    .map(coin => <div key={coin.coinType} className={"flex items-center gap-2"}>
+                        <img src={coin.logo} className="w-8 h-8" />
+                        <p className="">{coin.name}</p>
+                        <p className="ml-auto">{usdFormatter.format(parseFloat(coin.usdValue))}</p>
+                    </div>)}
+                {filtered.length == 0 && <p className="text-center my-4">No Coins Found</p>}
+                {filtered.length > 10 ?
+                    <Button variant={"outline"} onClick={() => setShowall(!showAll)}>
+                        {showAll ? "Hide" : "Show"} Remaining
+                    </Button> :
+                    <></>}
+            </div>:
+            isLoading ? 
+                <p className="text-center my-4">Loading...</p> :
+                <></>}
+        <h3 className="text-lg font-semibold">Transactions</h3>
+        <form className="flex gap-4" onSubmit={e => {
+            e.preventDefault()
+            const form_data = new FormData(e.target)
 
-    return <div>
-        <ConnectButton />
-        <p>{multisig}</p>
-        <button onClick={async () => {
-            const tx = new Transaction()
-            tx.setSender(multisig)
+            const tx_hash = form_data.get("tx_hash")?.toString()
 
-            const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(100)])
-            tx.transferObjects([coin], "0xde3cf6e00c0c521cc36057f347ad8f2658d6037168976cf701beca4174a7f8d8")
-
-            const result = await dAppKit.signTransaction({ transaction: tx })
-
-            executeAdd({
-                multisig,
-                signature: result.signature,
-                tx: result.bytes
-            })
+            if (!tx_hash || tx_hash.length !== 64) return
+            router.push(`/${multisig}/${tx_hash}`)
         }}>
-            Sign
-        </button>
+            <Input name="tx_hash" placeholder="Enter Alcatraz Transaction ID" />
+            <Button>View Transaction</Button>
+        </form>
+        <h3 className="text-lg font-semibold">Threshold: {multisigs[multisig].threshold} of {multisigs[multisig].signers.length} Signers</h3>
+        {multisigs[multisig].signers.map(s => <p className="font-mono" key={s}>{shortenAddress(s)}</p>)}
     </div>
 }
