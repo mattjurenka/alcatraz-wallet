@@ -15,6 +15,7 @@ import bs58 from "bs58"
 import toast from "react-hot-toast";
 import { useStore } from "@/lib/data";
 import { Network } from "lucide-react";
+import SuggestSignature from "@/components/suggestsignature";
 
 function parsePublicKey(bytes: Uint8Array<ArrayBufferLike>): PublicKey {
     const flag = bytes[0]
@@ -79,21 +80,24 @@ export default function AppLayout({
 
     }, [account?.address])
 
-    return <div className="flex flex-col min-h-screen">
-        <div className="flex py-4 items-center gap-2 px-4 lg:px-[30%] border-b-2">
-            <Link href="/" className="flex gap-2 items-center">
-                <img src="/alcatraz.svg" className="w-12 h-12"/>
-                <h1 className="font-bold text-xl">Alcatraz Wallet</h1>
-            </Link>
-            <div className="ml-auto flex items-center gap-2">
-                {connected_multisig && <><Network /> <p className="mr-4">Connected To Dapp</p></>}
-                <ConnectButton />
+    return <>
+        <SuggestSignature />
+        <div className="flex flex-col min-h-screen">
+            <div className="flex py-4 items-center gap-2 px-4 lg:px-[30%] border-b-2">
+                <Link href="/" className="flex gap-2 items-center">
+                    <img src="/alcatraz.svg" className="w-12 h-12"/>
+                    <h1 className="font-bold text-xl">Alcatraz Wallet</h1>
+                </Link>
+                <div className="ml-auto flex items-center gap-2">
+                    {connected_multisig && <><Network /> <p className="mr-4">Connected To Dapp</p></>}
+                    <ConnectButton />
+                </div>
+            </div>
+            {children}
+            <div className="flex py-4 items-center gap-2 px-4 lg:px-[30%] border-t-2">
+                <a href="https://github.com/mattjurenka/alcatraz-wallet" className="font-medium underline">GitHub</a>
+                <p className="ml-auto font-medium">Made with Love by Matthew Jurenka</p>
             </div>
         </div>
-        {children}
-        <div className="flex py-4 items-center gap-2 px-4 lg:px-[30%] border-t-2">
-            <a href="https://github.com/mattjurenka/alcatraz-wallet" className="font-medium underline">GitHub</a>
-            <p className="ml-auto font-medium">Made with Love by Matthew Jurenka</p>
-        </div>
-    </div>
+    </>
 }

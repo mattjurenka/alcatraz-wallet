@@ -148,7 +148,11 @@ export const getTransaction = actionClient
             env.THRESHOLD.list({ prefix })
         ])
         if (trx_result) {
-            let signed = sigs_result.keys.map(k => new Ed25519PublicKey(k.name.substring(145)).toSuiAddress())
+            let signed = await Promise.all(sigs_result.keys.map(async k => {
+                const signature = k.name.substring(145)
+                const pubkey = await verifyTransactionSignature(fromBase64(trx_result), signature)
+                return pubkey.toSuiAddress()
+            }))
             return { success: true, trx: trx_result, signed }
         } else {
             return { success: false, error: "Transaction Not Found", code: 5 }

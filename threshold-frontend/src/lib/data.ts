@@ -8,8 +8,10 @@ interface State {
     multisigs: {[addr: string]: Multisig},
     wallet_kit: Promise<WalletKit>,
     connected_multisig: Multisig | null,
+    on_sig_suggested: (trx: string) => void
 
     register_multisig: (multisig: Multisig) => void
+    set_on_sig_suggested: (fn: (trx: string) => void) => void
     connect_multisig: (multisig: Multisig, uri: string) => Promise<void>
     load_localstorage: () => void
     init_walletkit: () => Promise<void>
@@ -33,6 +35,8 @@ export const useStore = create<State>((set, get) => ({
         })
     })(),
     connected_multisig: null,
+    on_sig_suggested: () => {},
+
     register_multisig: (multisig) => {
         set(state => {
             const new_state = { ...state.multisigs, [multisig.address]: multisig }
@@ -40,6 +44,7 @@ export const useStore = create<State>((set, get) => ({
             return new_state
         })
     },
+    set_on_sig_suggested: (fn) => set({ on_sig_suggested: fn }),
     connect_multisig: async (multisig, uri) => {
         const wk = await get().wallet_kit
         set({ connected_multisig: multisig })
@@ -85,6 +90,12 @@ export const useStore = create<State>((set, get) => ({
                                 result: [{ pubkey: connected_multisig.pubkey, address: connected_multisig.address }]
                             }
                         })
+                    } else if (request.method === "sui_signTransaction") {
+                        const { transaction, address } = request.params as { transaction: string, address: string }
+                        const state = get()
+                        if (address !== state.connected_multisig?.address) return
+                        
+                        state.on_sig_suggested(transaction)
                     }
                 })
 
