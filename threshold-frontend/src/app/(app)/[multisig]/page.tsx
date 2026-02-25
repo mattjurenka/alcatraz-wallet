@@ -26,7 +26,7 @@ export default function Multisig() {
     const filtered = data?.coins?.filter(coin => !coin.scam && coin.verified)
         ?.toSorted((a, b) => parseFloat(b.usdValue) - parseFloat(a.usdValue) )
 
-    return <div className="px-2 sm:px-4 lg:px-[30%] h-full flex grow flex-col py-2 sm:py-16 gap-4">
+    return <div className="px-2 sm:px-4 md:px-16 lg:px-32 2xl:px-[30%] h-full flex grow flex-col py-2 sm:py-16 gap-4">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-baseline sm:items-center">
             <div>
                 <p>Wallet</p>
@@ -77,7 +77,12 @@ export default function Multisig() {
             <Input name="tx_hash" placeholder="Enter Alcatraz Transaction ID" />
             <Button>View Transaction</Button>
         </form>
-        <h3 className="text-lg font-semibold">Threshold: {multisigs[multisig].threshold} of {multisigs[multisig].signers.length} Signers</h3>
-        {multisigs[multisig].signers.map(s => <p className="font-mono" key={s}>{shortenAddress(s)}</p>)}
+        {multisigs[multisig] ? 
+            <>
+                <h3 className="text-lg font-semibold">Threshold: {multisigs[multisig].threshold} of {multisigs[multisig].signers.length} Signers</h3>
+                {multisigs[multisig].signers.map(s => <p className="font-mono" key={s}>{shortenAddress(s)}</p>)}
+            </> :
+            <h3 className="text-lg font-semibold">Loading Multisig...</h3>
+            }
     </div>
 }

@@ -42,7 +42,7 @@ export default function Transaction() {
         return "signeeded"
     })()
 
-    return <div className="px-4 lg:px-[30%] h-full flex grow flex-col py-16 gap-4">
+    return <div className="px-2 sm:px-4 md:px-16 lg:px-32 2xl:px-[30%] h-full flex grow flex-col py-16 gap-4">
         <div className="flex gap-4">
             <div>
                 <p>Transaction</p>

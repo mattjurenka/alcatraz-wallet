@@ -6,13 +6,15 @@ import { getCoinData, getTransaction } from "./actions"
 import WalletKit from "@reown/walletkit"
 import Core from "@walletconnect/core"
 
+
 interface State {
     multisigs: {[addr: string]: Multisig},
-    wallet_kit: Promise<WalletKit>,
+    wallet_kit: WalletKit | null,
     connected_multisig: Multisig | null,
     on_sig_suggested: (trx: string) => void
 
     register_multisig: (multisig: Multisig) => void
+    set_wallet_kit: (wk: WalletKit) => void
     set_on_sig_suggested: (fn: (trx: string) => void) => void
     connect_multisig: (multisig: Multisig, uri: string) => Promise<void>
     load_localstorage: () => void
@@ -21,21 +23,7 @@ interface State {
 
 export const useStore = create<State>((set, get) => ({
     multisigs: {},
-    wallet_kit: (() => {
-        const core = new Core({
-            projectId: "805bd4ade75ef7e76aa7427521732faf",
-        });
-
-        return WalletKit.init({
-            core,
-            metadata: {
-                name: "Alcatraz Wallet",
-                description: "Multisig for Sui",
-                url: "https://threshold.kinecta.app",
-                icons: []
-            }
-        })
-    })(),
+    wallet_kit: null,
     connected_multisig: null,
     on_sig_suggested: () => {},
 
@@ -43,14 +31,14 @@ export const useStore = create<State>((set, get) => ({
         set(state => {
             const new_state = { ...state.multisigs, [multisig.address]: multisig }
             localStorage.setItem("multisigs", JSON.stringify(new_state))
-            return new_state
+            return { multisigs: new_state }
         })
     },
     set_on_sig_suggested: (fn) => set({ on_sig_suggested: fn }),
     connect_multisig: async (multisig, uri) => {
-        const wk = await get().wallet_kit
-        set({ connected_multisig: multisig })
+        const wk = get().wallet_kit!
         await wk.pair({ uri })
+        set({ connected_multisig: multisig })
     },
     load_localstorage: () => {
         const stored_multisigs = localStorage.getItem("multisigs")
@@ -59,58 +47,67 @@ export const useStore = create<State>((set, get) => ({
             set({ multisigs })
         }
     },
+    set_wallet_kit: wk => set({ wallet_kit: wk }),
     init_walletkit: async () => {
-        (await get().wallet_kit)
-            .on("session_proposal", async proposal => {
-                const { connected_multisig, wallet_kit } = get()
-                const wk = await wallet_kit
-                if (!connected_multisig) return
+        console.log("Initializing Walletkit")
+        const { wallet_kit } = get()
+        const wk = wallet_kit!
+        
+        wk.on("session_request", async requestEvent => {
+            const connected_multisig = get().connected_multisig
+            if (!connected_multisig) throw new Error('asddja')
 
-                const session = await wk.approveSession({
-                    id: proposal.id,
-                    namespaces: {
-                        sui: {
-                            accounts: ["sui:mainnet:" + connected_multisig.address],
-                            methods: ["sui_getAccounts", "sui_signTransaction", "sui_signAndExecuteTransaction", "sui_signPersonalMessage"],
-                            events: []
-                        }
-                    }
-                })
+            console.log("Received request", requestEvent)
+            const { id, params, topic, verifyContext } = requestEvent
+            const { request } = params
 
-                wk.on("session_request", async requestEvent => {
-                    const { id, params, topic, verifyContext } = requestEvent
-                    const { request } = params
-                    if (topic !== session.topic) return
-                    console.log("Received request", request)
-
-                    if (request.method === "sui_getAccounts") {
-                        await wk.respondSessionRequest({
-                            topic: session.topic,
-                            response: {
-                                id,
-                                jsonrpc: "2.0",
-                                result: [{ pubkey: connected_multisig.pubkey, address: connected_multisig.address }]
-                            }
-                        })
-                    } else if (request.method === "sui_signTransaction") {
-                        const { transaction, address } = request.params as { transaction: string, address: string }
-                        const state = get()
-                        if (address !== state.connected_multisig?.address) return
-                        
-                        state.on_sig_suggested(transaction)
-                    }
-                })
-
+            if (request.method === "sui_getAccounts") {
+                console.log("sending accs", connected_multisig)
                 await wk.respondSessionRequest({
-                    topic: session.topic,
+                    topic: topic,
                     response: {
-                        id: proposal.id,
-                        result: "session approved",
-                        jsonrpc: "2.0"
+                        id,
+                        jsonrpc: "2.0",
+                        result: [{ pubkey: connected_multisig.pubkey, address: connected_multisig.address }]
                     }
                 })
+            } else if (request.method === "sui_signTransaction") {
+                const { transaction, address } = request.params as { transaction: string, address: string }
+                const state = get()
+                if (address !== state.connected_multisig?.address) return
+                
+                state.on_sig_suggested(transaction)
+            }
+        })
 
+        wk.on("session_proposal", async proposal => {
+            const connected_multisig = get().connected_multisig!
+            console.log("Received session proposal:", proposal, connected_multisig)
+            if (!connected_multisig) return
+
+            const session = await wk.approveSession({
+                id: proposal.id,
+                namespaces: {
+                    sui: {
+                        accounts: ["sui:mainnet:" + connected_multisig.address],
+                        methods: ["sui_getAccounts", "sui_signTransaction", "sui_signAndExecuteTransaction", "sui_signPersonalMessage"],
+                        events: []
+                    }
+                }
             })
+            console.log("Approved Session:", session)
+
+            await wk.respondSessionRequest({
+                topic: session.topic,
+                response: {
+                    id: proposal.id,
+                    result: "session approved",
+                    jsonrpc: "2.0"
+                }
+            })
+            console.log("responded to session request")
+
+        })
     }
 }))
 
