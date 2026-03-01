@@ -3,17 +3,21 @@
 import ConnectWalletConnect from "@/components/dashboard/connectwalletconnect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { coinDataFetcher, useStore } from "@/lib/data";
+import { coinDataFetcher, trxHistoryFetcher, useStore } from "@/lib/data";
 import { shortenAddress } from "@/lib/utils";
-import { Copy } from "lucide-react";
+import { CheckCircle2Icon, Copy, XCircle } from "lucide-react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import useSWR from "swr"
+import { tr } from "zod/v4/locales";
 
 const usdFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD'
 });
+
+const dateFormatter = new Intl.DateTimeFormat('en-US')
 
 export default function Multisig() {
     const { multisig } = useParams<{ multisig: string }>()
@@ -22,9 +26,11 @@ export default function Multisig() {
     const multisigs = useStore(s => s.multisigs)
     const router = useRouter()
     
-    const { data, isLoading } = useSWR(multisig, coinDataFetcher)
+    const { data, isLoading } = useSWR({ address: multisig, fn: "coindata" }, coinDataFetcher)
     const filtered = data?.coins?.filter(coin => !coin.scam && coin.verified)
         ?.toSorted((a, b) => parseFloat(b.usdValue) - parseFloat(a.usdValue) )
+
+    const { data: trxHistoryData, isLoading: trxHistoryLoading } = useSWR({ address: multisig, fn: "history" }, trxHistoryFetcher)
 
     return <div className="px-2 sm:px-4 md:px-16 lg:px-32 2xl:px-[30%] h-full flex grow flex-col py-2 sm:py-16 gap-4">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-baseline sm:items-center">
@@ -52,7 +58,7 @@ export default function Multisig() {
                     .map(coin => <div key={coin.coinType} className={"flex items-center gap-2"}>
                         <img src={coin.logo} className="w-8 h-8" />
                         <p className="">{coin.name}</p>
-                        <p className="ml-auto">{usdFormatter.format(parseFloat(coin.usdValue))}</p>
+                        <p className="ml-auto font-mono">{usdFormatter.format(parseFloat(coin.usdValue))}</p>
                     </div>)}
                 {filtered.length == 0 && <p className="text-center my-4">No Coins Found</p>}
                 {filtered.length > 10 ?
@@ -64,7 +70,30 @@ export default function Multisig() {
             isLoading ? 
                 <p className="text-center my-4">Loading...</p> :
                 <></>}
-        <h3 className="text-lg font-semibold">Transactions</h3>
+        <h3 className="text-lg font-semibold">Transaction History</h3>
+        {trxHistoryData?.data?.map(trx => <Link
+            href={"https://suivision.xyz/txblock/" + trx.digest}
+            key={trx.digest}
+            target="_blank"
+            className="flex gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md"
+        >
+            <p className="font-mono underline">{trx.digest.slice(0, 4)}...{trx.digest.slice(trx.digest.length - 4)}</p>
+            <div>
+                {trx.status === "success" ?
+                    <CheckCircle2Icon className="text-green-600" /> :
+                    <XCircle className="text-red-700" />}
+            </div>
+            <p className="ml-auto">
+                {new Date(parseInt(trx.timestampMs)).toLocaleString()}
+            </p>
+        </Link>)}
+        {multisigs[multisig] ? 
+            <>
+                <h3 className="text-lg font-semibold">Threshold: {multisigs[multisig].threshold} of {multisigs[multisig].signers.length} Signers</h3>
+                {multisigs[multisig].signers.map(s => <p className="font-mono" key={s}>{shortenAddress(s)}</p>)}
+            </> :
+            <h3 className="text-lg font-semibold">Loading Multisig...</h3>}
+        <h3 className="text-lg font-semibold">Sign Pending Transaction</h3>
         <form className="flex flex-col sm:flex-row gap-4" onSubmit={e => {
             e.preventDefault()
             const form_data = new FormData(e.target)
@@ -77,12 +106,5 @@ export default function Multisig() {
             <Input name="tx_hash" placeholder="Enter Alcatraz Transaction ID" />
             <Button>View Transaction</Button>
         </form>
-        {multisigs[multisig] ? 
-            <>
-                <h3 className="text-lg font-semibold">Threshold: {multisigs[multisig].threshold} of {multisigs[multisig].signers.length} Signers</h3>
-                {multisigs[multisig].signers.map(s => <p className="font-mono" key={s}>{shortenAddress(s)}</p>)}
-            </> :
-            <h3 className="text-lg font-semibold">Loading Multisig...</h3>
-            }
     </div>
 }

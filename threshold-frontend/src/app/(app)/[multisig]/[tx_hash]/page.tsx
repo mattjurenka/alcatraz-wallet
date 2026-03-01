@@ -31,8 +31,12 @@ export default function Transaction() {
     const multisig = useStore(s => s.multisigs[multisig_addr])
     const account = useCurrentAccount()
     const dAppKit = useDAppKit()
-    const { data, error, isLoading } = useSWR([multisig_addr, tx_hash], trxDataFetcher)
+    const { data, error, isLoading } = useSWR({ multisig: multisig_addr, tx_hash }, trxDataFetcher)
 
+    if (!multisig) {
+        // TODO: if user has not loaded multisig then try to load multisig
+        return <p>Loading...</p>
+    }
     const sig_state = (() => {
         if (!account) return "loggedout"
         if (!(data?.signed || data?.trx)) return "loading"

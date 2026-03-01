@@ -1,7 +1,7 @@
 "use server"
 
 import { createSafeActionClient } from "next-safe-action";
-import { registerMultisigSchema, registerPubkeySchema, addSignatureSchema, Multisig, Signature, combineSignaturesSchema, getTxSignatureSchema, getMultisigSchema, getCoinDataSchema } from "./schemas";
+import { registerMultisigSchema, registerPubkeySchema, addSignatureSchema, Multisig, Signature, combineSignaturesSchema, getTxSignatureSchema, getMultisigSchema, getCoinDataSchema, getTransactionHistorySchema } from "./schemas";
 
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
@@ -135,6 +135,8 @@ export const getTransaction = actionClient
     .action(async ({ parsedInput: { tx_hash, multisig } }) => {
         const env = getCloudflareContext().env as Env
 
+        console.log(tx_hash, multisig)
+
         const prefix = `multisig_sig:${multisig}:${tx_hash}`
         const [trx_result, sigs_result] = await Promise.all([
             env.THRESHOLD.get(`transaction:${tx_hash}`),
@@ -202,4 +204,37 @@ export const getCoinData = actionClient
 
         const json = ((await response.json()) as any)
         return json.result as BlockVisionCoins
+    })
+
+interface BlockVisionTransaction {
+    digest: string
+    status: "success" | "failure"
+    timestampMs: string
+}
+
+interface BlockVisionTransactions {
+    data: BlockVisionTransaction[]
+    nextPageCursor: string
+}
+
+export const getTransactionHistory = actionClient
+    .inputSchema(getTransactionHistorySchema)
+    .action(async ({ parsedInput: { address } }) => {
+        if (!isValidSuiAddress(address)) {
+            return
+        }
+
+        const env = getCloudflareContext().env as Env
+        const response = await fetch(
+            `https://api.blockvision.org/v2/sui/account/activities?address=${address}`,
+            {
+                headers: {
+                    "Accept": "application/json",
+                    "X-Api-Key": env.BLOCKVISION_KEY
+                }
+            }
+        )
+
+        const json = ((await response.json()) as any)
+        return json.result as BlockVisionTransactions
     })

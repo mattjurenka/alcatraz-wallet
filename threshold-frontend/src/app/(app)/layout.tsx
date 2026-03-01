@@ -96,8 +96,9 @@ export default function AppLayout({
                 </div>
             </div>
             {children}
-            <div className="flex py-2 sm:py-4 items-center gap-2 px-2 sm:px-4 md:px-16 lg:px-32 2xl:px-[30%] border-t-2">
+            <div className="flex py-2 sm:py-4 items-center gap-4 px-2 sm:px-4 md:px-16 lg:px-32 2xl:px-[30%] border-t-2">
                 <a href="https://github.com/mattjurenka/alcatraz-wallet" className="font-medium underline">GitHub</a>
+                <a href="https://docs.alcatraz.kinecta.app/" className="font-medium underline">Docs</a>
                 <p className="ml-auto text-sm sm:text-base font-medium">Made with Love by Kinecta Telecom</p>
             </div>
         </div>

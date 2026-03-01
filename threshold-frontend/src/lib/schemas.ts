@@ -33,6 +33,10 @@ export const getCoinDataSchema = z.object({
   address: z.string()
 })
 
+export const getTransactionHistorySchema = z.object({
+  address: z.string()
+})
+
 export interface Multisig {
   threshold: number,
   signers: string[],

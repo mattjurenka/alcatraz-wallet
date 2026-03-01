@@ -2,10 +2,10 @@
 
 import { create } from "zustand"
 import { Multisig } from "./schemas"
-import { getCoinData, getTransaction } from "./actions"
+import { getCoinData, getTransaction, getTransactionHistory } from "./actions"
 import WalletKit from "@reown/walletkit"
-import Core from "@walletconnect/core"
-
+import { SafeActionResult, ValidationErrors } from "next-safe-action"
+import z, { ZodObject } from "zod"
 
 interface State {
     multisigs: {[addr: string]: Multisig},
@@ -111,18 +111,16 @@ export const useStore = create<State>((set, get) => ({
     }
 }))
 
-export const coinDataFetcher = async (address: string) => {
-    const { data, serverError, validationErrors } = await getCoinData({ address })
-    console.log("data", data)
-    if (serverError) throw new Error(serverError)
-    if (validationErrors) throw new Error(JSON.stringify(validationErrors))
-    return data
+export const get_fetcher = <S extends ZodObject<any, any>, R>(action: (args: z.infer<S>) => Promise<SafeActionResult<string, S, ValidationErrors<S>, R>>): ((args: z.infer<S>) => Promise<R>) =>  {
+    return async (a) => {
+        const { data, serverError, validationErrors } = await action(a)
+        if (serverError) throw new Error(serverError)
+        if (validationErrors) throw new Error(JSON.stringify(validationErrors))
+        if (!data) throw new Error("No Data and No Errors")
+        return data
+    }
 }
 
-export const trxDataFetcher = async ([multisig, tx_hash]: [string, string]) => {
-    const { data, serverError, validationErrors } = await getTransaction({ multisig, tx_hash })
-    if (serverError) throw new Error(serverError)
-    if (validationErrors) throw new Error(JSON.stringify(validationErrors))
-    return data
-}
-
+export const coinDataFetcher = get_fetcher(getCoinData)
+export const trxDataFetcher = get_fetcher(getTransaction)
+export const trxHistoryFetcher = get_fetcher(getTransactionHistory)
